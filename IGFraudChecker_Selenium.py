@@ -22,7 +22,6 @@ username = input("Login to instagram\n\nEnter your username\n")
 password = input("Enter your password\n")
 fraud_user = input("Enter the user suspected of FRAUD\n")
 
-
 driver = webdriver.Firefox(options=options)
 
 # LOGIN PHASE
@@ -32,12 +31,19 @@ time.sleep(1)
 user = driver.find_element_by_name('username')
 user.clear()
 user.send_keys(username)
-
 pw = driver.find_element_by_name('password')
 pw.clear() 
 pw.send_keys(password)
 
-loginButton = driver.find_element_by_xpath('/html/body/div[1]/section/main/article/div[2]/div[1]/div/form/div[4]')
+found = False 
+while (not found) :
+    try:
+        loginButton = driver.find_element_by_xpath('/html/body/div[1]/section/main/article/div[2]/div[1]/div/form/div[4]')
+        found = True
+    except Exception as e:
+        print("Element not found, retrying...")
+        time.sleep(1)
+
 loginButton.click()
 
 # Logging in...
@@ -51,7 +57,16 @@ time.sleep(1)
 dismissButton = driver.find_element_by_xpath('/html/body/div[1]/section/main/div/div/div/div/button')
 dismissButton.click()
 time.sleep(1)
-dismissButton = driver.find_element_by_xpath('/html/body/div[4]/div/div/div/div[3]/button[2]')
+
+found = False
+while (not found) :
+    try:
+        dismissButton = driver.find_element_by_xpath('/html/body/div[4]/div/div/div/div[3]/button[2]')
+        found = True
+    except Exception as e:
+        print("Element not found, retrying...")
+        time.sleep(1)
+
 dismissButton.click()
 
 # LOGGED IN
@@ -69,7 +84,15 @@ found.click()
 # Load the fraud's page
 time.sleep(1)
 
-followers = driver.find_element_by_xpath('/html/body/div[1]/section/main/div/header/section/ul/li[2]/a/span')
+found = False
+while (not found) :
+    try:
+        followers = driver.find_element_by_xpath('/html/body/div[1]/section/main/div/header/section/ul/li[2]/a/span')
+        found = True
+    except Exception as e:
+        print("Element not found, retrying...") # Page hasn't loaded fast enough
+        time.sleep(1)
+
 print(convert_str_to_number(followers.text))
 followers.click()
 time.sleep(0.7)
