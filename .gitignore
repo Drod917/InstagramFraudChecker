@@ -1,2 +1,4 @@
 *.log
 *.exe
+names.txt
+__pycache__/
