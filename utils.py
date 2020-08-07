@@ -9,3 +9,5 @@ def convert_str_to_number(x):
         if len(x) > 1:
             total_stars = float(x[:-1]) * num_map.get(x[-1].upper(), 1)
     return int(total_stars)
+
+
