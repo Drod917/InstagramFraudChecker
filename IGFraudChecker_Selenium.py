@@ -15,7 +15,7 @@ password = getpass(prompt="Enter your password: ")
 
 options = webdriver.FirefoxOptions()
 # Set to true for a live view
-options.headless = True
+options.headless = False
 driver = webdriver.Firefox(options=options)
 wait = WebDriverWait(driver, 10)
 
@@ -125,13 +125,14 @@ try:
         if (height == track_height.size['height']): # List didn't refresh, check for end
             fetched_followers = len(driver.find_elements_by_css_selector(
                 'a.FPmhX.notranslate._0imsa'))
-            if (fetched_followers == follower_count):
+            if (fetched_followers >= follower_count): # END AROUND THE COUNT INSTEAD
                 done = True
             print(str(fetched_followers) + " followers loaded")
             time.sleep(0.2)
         height = track_height.size['height']
 except Exception as e:
     print(e)
+
 end = time.time()
 names_list = driver.find_elements_by_css_selector('a.FPmhX.notranslate._0imsa')
 followers_found = len(names_list)
@@ -139,6 +140,7 @@ followers_found = len(names_list)
 print("End of followers reached")
 print("Found " + str(followers_found) + " followers in " + str(end - start) + "s")
 
+# %%
 # Scroll through the follower list to generate a complete file
 with open('names.txt', 'w') as names_file:
     for account in names_list:
