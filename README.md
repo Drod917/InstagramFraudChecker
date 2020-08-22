@@ -11,6 +11,13 @@ git clone https://github.com/Drod917/InstagramFraudChecker
 ### 1) Acquire a webdriver
 Acquire the webdriver of your choice and place it in the same folder (Currently only supports Firefox)
 
-### 2) ???
+### 2) To use:
+
+```
+bot = FraudChecker('username', 'password')
+bot.lock_on('potential_fraud')
+bot.check_for_fraud()
+bot.show_distribution()
+```
 
 ### 3) Profit!
