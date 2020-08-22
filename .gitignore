@@ -2,3 +2,4 @@
 *.exe
 names.txt
 __pycache__/
+data/
