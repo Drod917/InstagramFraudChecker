@@ -64,7 +64,6 @@ class FraudChecker():
         def grab_follower_metadata(loader, user: str) -> []:
             profile = Profile.from_username(loader.context, user)
             ret_user = [user, profile.followers, profile.followees]
-            #print(ret_user)
             resource_lock.acquire()
             csv_writer.writerow(ret_user) # write to checkpoint
             resource_lock.release()
@@ -98,25 +97,26 @@ class FraudChecker():
             # exe.submit(pool_worker(q4))
             exe.submit(pool_worker(followers))
 
+    # DO NOT USE UNLESS THE BUILD FILE IS COMPLETE
     def build_dataframe(self):
-        filename = self.fraud_target_username + '_build_file.csv'
-        # Read the build_file into a dataframe
+        build_filename = self.fraud_target_username + '_build_file.csv'
+        # Read the build_file into a dataframe with column labels
         try:
-            df = pd.read_csv(filename, header=None, names=['username','followers','following'])
+            df = pd.read_csv(build_filename, header=None, names=['username','followers','following'])
         except FileNotFoundError as e:
             print("No build file found. DataFrame build failed")
             return
         self.fraud_target_data = df
-        os.remove(filename)
-        filename = self.fraud_target_username + '_dataframe.csv'
-        df.to_csv(filename, index=False)
-        self.filename = filename
+        df_filename = self.fraud_target_username + '_dataframe.csv'
+        df.to_csv(df_filename, index=False)
+        self.filename = df_filename
         self.loader = instaloader.Instaloader()
-        print("Dataframe written to " + filename)
+        print("Dataframe written to " + df_filename)
+        os.remove(build_filename)
         return df 
 
     def show_distribution(self):
-        dist = Distribution(self.filename)
+        dist = Distribution(self.filename, self.fraud_target_username)
         dist.get_distribution()
 
 

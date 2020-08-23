@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 class Distribution():
     x = np.arange(1,10,1) 
 
-    def __init__(self, filename=""):
+    def __init__(self, filename='', title=None):
         self.filename = filename
+        self.title = title
 
     def get_distribution(self, followers=True, following=False):
             df = pd.read_csv(self.filename)
@@ -35,11 +36,14 @@ class Distribution():
             benford = lambda x : np.log(x + 1) - np.log(x)
             benford_y = list(map(benford, self.x))
             fig, ax = plt.subplots(2)
-            ax[0].plot(self.x, benford_y, label='benford')
+            ax[0].plot(self.x, benford_y, label='benford\'s curve')
             ax[0].legend()
             if followers:
                 ax[1].plot(self.x, self.follower_dist, label='followers')
             if following:
                 ax[1].plot(self.x, self.following_dist, label='following')
             ax[1].legend()
+            if self.title:
+                plt.title(self.title + '\'s curve')
+            plt.tight_layout()
             plt.show()
