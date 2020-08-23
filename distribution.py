@@ -5,10 +5,12 @@ import matplotlib.pyplot as plt
 class Distribution():
     x = np.arange(1,10,1) 
 
-    def __init__(self, filename='', title=None):
+    def __init__(self, filename=None):
         self.filename = filename
-        self.title = title
+        self.title = filename[:filename.find('_dataframe.csv')]
 
+    # Pre-condition: The CSV being read-in has the format
+    # [username: str, followers: int, following: int]
     def get_distribution(self, followers=True, following=False):
             df = pd.read_csv(self.filename)
             y_1 = []
@@ -43,7 +45,6 @@ class Distribution():
             if following:
                 ax[1].plot(self.x, self.following_dist, label='following')
             ax[1].legend()
-            if self.title:
-                plt.title(self.title + '\'s curve')
+            plt.title(self.title + '\'s curve')
             plt.tight_layout()
             plt.show()
