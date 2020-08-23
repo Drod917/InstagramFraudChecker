@@ -14,9 +14,16 @@ Acquire the webdriver of your choice and place it in the same folder (Currently 
 ### 2) To use:
 
 ```
+from fraudchecker import FraudChecker
+
 bot = FraudChecker('username', 'password')
+
 bot.lock_on('potential_fraud')
+
 bot.check_for_fraud()
+
+bot.build_distribution()
+
 bot.show_distribution()
 ```
 
