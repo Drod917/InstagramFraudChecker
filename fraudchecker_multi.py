@@ -56,7 +56,7 @@ class FraudChecker():
                 df.to_csv(filename, index=False)
                 save('resume_information.json', post_iterator.freeze())
                 quit()
-        self.fraud_target_followers = followers
+        self.followers = followers
         self.loader = instaloader.Instaloader() # 'logout'
         print("Followers loaded.")
         self.__get_metrics()
@@ -121,6 +121,7 @@ class FraudChecker():
         print("Pulling follower metadata...")
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as exe:
             # Isolate & multithread this
+            followers = self.followers
             size = len(followers)
             q1 = followers[:(size//4)]                     #  0% - 25%
             q2 = followers[size//4:(size//2)]           # 26% - 50%
