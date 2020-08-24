@@ -8,10 +8,7 @@ Detects accounts who have bought followers
 git clone https://github.com/Drod917/InstagramFraudChecker
 ```
 
-### 1) Acquire a webdriver
-Acquire the webdriver of your choice and place it in the same folder (Currently only supports Firefox)
-
-### 2) To use:
+### 1) To use:
 
 ```
 from fraudchecker import FraudChecker
@@ -26,5 +23,3 @@ bot.build_distribution()
 
 bot.show_distribution()
 ```
-
-### 3) Profit!
