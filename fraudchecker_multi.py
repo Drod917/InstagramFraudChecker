@@ -81,8 +81,12 @@ class FraudChecker():
         def grab_follower_metadata(loader, user: str) -> []:
             try:
                 profile = Profile.from_username(loader.context, user)
+            except KeyboardInterrupt:
+                print("\nKeyboard interrupt detected, exiting...")
+                exit
             except:
                 print("Follower " + user + " changed names! Skipping...")
+                return
             ret_user = [user, profile.followers, profile.followees]
             resource_lock.acquire()
             csv_writer.writerow(ret_user) # write to checkpoint
@@ -117,7 +121,9 @@ class FraudChecker():
             # exe.submit(pool_worker(q4))
             exe.submit(pool_worker(followers))
 
-    # DO NOT USE UNLESS THE BUILD FILE IS COMPLETE
+    # Populate 'build_file' with the metadata from each follower in
+    # the fraud target's follower list.
+    # WARNING: DO NOT USE UNLESS THE BUILD FILE IS COMPLETE
     def build_dataframe(self):
         build_filename = self.fraud_target_username + '_build_file.csv'
         # Read the build_file into a dataframe with column labels
@@ -132,6 +138,10 @@ class FraudChecker():
         self.filename = df_filename
         self.loader = instaloader.Instaloader()
         print("Dataframe written to " + df_filename)
+        # TODO: Add safety before removing.
+        # Maybe: Compare the length of the build file with the length
+        # of the follower list before removing the build file.
+        # Then, I can remove the follower file as well.
         os.remove(build_filename)
         return df 
 
