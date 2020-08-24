@@ -83,7 +83,7 @@ class FraudChecker():
             else:
                 build_file = open(filename, 'w', newline='')
                 followers = pool
-            csv_writer = csv.writer(filename, build_file)
+            csv_writer = csv.writer(build_file)
 
             # Continue loading from checkpoint
             try:
