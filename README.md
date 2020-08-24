@@ -18,7 +18,7 @@ from fraudchecker import FraudChecker
 
 bot = FraudChecker('username', 'password')
 
-bot.lock_on('potential_fraud')
+bot.target('potential_fraud')
 
 bot.check_for_fraud()
 
