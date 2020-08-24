@@ -29,15 +29,32 @@ class FraudChecker():
     
     def check_for_fraud(self):
         self.loader.login(self.username, self.password)
+        filename = self.fraud_target.username + '_followers.txt'
+        print("Loading followers...")
         followers = []
-        post_iterator = self.fraud_target.get_followers()
-        try:
-            for follower in post_iterator:
-                print(". ", end="", flush=True)
-                followers.append(follower.username)
-        except KeyboardInterrupt:
-            save('resume_information.json', post_iterator.freeze())
-        print()
+        # Look for first checkpoint
+        if os.path.exists(filename):
+            print("First checkpoint found, resuming...")
+            f = open(filename, 'r')
+            followers = f.read().splitlines()
+            f.close()
+        else:
+            # Load first checkpoint
+            f = open(filename, 'w')
+            post_iterator = self.fraud_target.get_followers()
+            try:
+                for follower in post_iterator:
+                    print(". ", end="", flush=True)
+                    followers.append(follower.username)
+                # Create first checkpoint
+                f.write(followers)
+                f.close()
+                print("Wrote " + str(len(followers)) + " followers to file.")
+            except Exception as e:
+                f.write(followers)
+                f.close()
+                save('resume_information.json', post_iterator.freeze())
+                exit
         self.fraud_target_followers = followers
         self.loader = instaloader.Instaloader() # 'logout'
         print("Followers loaded.")
@@ -62,7 +79,10 @@ class FraudChecker():
             print("Build file written to " + filename)
 
         def grab_follower_metadata(loader, user: str) -> []:
-            profile = Profile.from_username(loader.context, user)
+            try:
+                profile = Profile.from_username(loader.context, user)
+            except:
+                print("Follower " + user + " changed names! Skipping...")
             ret_user = [user, profile.followers, profile.followees]
             resource_lock.acquire()
             csv_writer.writerow(ret_user) # write to checkpoint
