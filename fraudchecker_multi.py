@@ -62,23 +62,34 @@ class FraudChecker():
         self.__get_metrics()
 
     def __get_metrics(self) -> pd.DataFrame:
-        csv_writer = []
-        resource_lock = threading.Lock()  
-        filename = self.fraud_target.username + '_build_file.csv'
-        build_file = ''
-        # build_file_p1
-        # build_file_p2
-        # build_file_p3
-        # build_file_p4
-
-        # TODO: Each pool worker will generate its own build_file,
-        # all of which get combined into one csv at the end
-        def pool_worker(pool: []):
+        # TODO: Each pool worker waits for the lock,
+        # appending each follower it retrieves to the list
+        def pool_worker(pool: [], worker_idx: int):
             pool_loader = instaloader.Instaloader()
-            # Try to open build_file and continue loading from checkpoint
+            filename = self.fraud_target_username + '_build_file_' + str(worker_idx)
+            csv_writer = []
+            build_file = []
+
+            # Try to open build file
+            if os.path.exists(filename):
+                build_file = open(filename, 'r', newline='')
+                last_loaded_follower = 0
+                for line in build_file.readlines():
+                    last_loaded_follower += 1
+                build_file.close()
+                build_file = open(filename, 'a', newline='')
+                print("Continuing from line " + str(last_loaded_follower), flush=True)
+                followers = pool[last_loaded_follower:]
+            else:
+                build_file = open(filename, 'w', newline='')
+                followers = pool
+            csv_writer = csv.writer(filename, build_file)
+
+            # Continue loading from checkpoint
             try:
                 for user in tqdm(pool):
                     new_user = grab_follower_metadata(pool_loader, user)
+                    csv_writer.writerow(new_user) # write to checkpoint
             except KeyboardInterrupt:
                 print("\nKeyboard interrupt detected, exiting...")
                 build_file.close()
@@ -106,38 +117,20 @@ class FraudChecker():
                     return
                 loader = instaloader.Instaloader() # logout
             ret_user = [user, profile.followers, profile.followees]
-            resource_lock.acquire()
-            csv_writer.writerow(ret_user) # write to checkpoint
-            resource_lock.release()
 
-        # Look for checkpoint
-        if os.path.exists(filename):
-            build_file = open(filename, 'r', newline='')
-            last_loaded_follower = 0
-            for line in build_file.readlines():
-                last_loaded_follower += 1
-            build_file.close()
-            build_file = open(filename, 'a', newline='')
-            print("Continuing from line " + str(last_loaded_follower), flush=True)
-            followers = self.fraud_target_followers[last_loaded_follower:]
-        else:
-            build_file = open(filename, 'w', newline='')
-            followers = self.fraud_target_followers
-        self.filename = filename
-        csv_writer = csv.writer(build_file)
         print("Pulling follower metadata...")
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as exe:
             # Isolate & multithread this
             size = len(followers)
-            # q1 = followers[:(size//4)]                     #  0% - 25%
-            # q2 = followers[size//4:(size//2)]           # 26% - 50%
-            # q3 = followers[size//2:(size - size//4)]    # 51% - 75%
-            # q4 = followers[size - size//4:size]      # 76% - 100%
-            # exe.submit(pool_worker(q1))
-            # exe.submit(pool_worker(q2))
-            # exe.submit(pool_worker(q3))
-            # exe.submit(pool_worker(q4))
-            exe.submit(pool_worker(followers))
+            q1 = followers[:(size//4)]                     #  0% - 25%
+            q2 = followers[size//4:(size//2)]           # 26% - 50%
+            q3 = followers[size//2:(size - size//4)]    # 51% - 75%
+            q4 = followers[size - size//4:size]      # 76% - 100%
+            exe.submit(pool_worker(q1, 1))
+            exe.submit(pool_worker(q2, 2))
+            exe.submit(pool_worker(q3, 3))
+            exe.submit(pool_worker(q4, 4))
+            #exe.submit(pool_worker(followers))
 
     # Populate 'build_file' with the metadata from each follower in
     # the fraud target's follower list.
