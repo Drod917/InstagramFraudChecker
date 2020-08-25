@@ -8,6 +8,13 @@ Detects accounts who have bought followers
 git clone https://github.com/Drod917/InstagramFraudChecker
 ```
 
+### DEPENDENCIES:
+* numpy
+* pandas
+* matplotlib
+* tqdm
+* instaloader
+
 ### 1) To use:
 for the single-threaded version,
 
