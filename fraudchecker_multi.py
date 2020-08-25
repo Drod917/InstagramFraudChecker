@@ -64,12 +64,11 @@ class FraudChecker():
     def __get_metrics(self) -> pd.DataFrame:
         # TODO: Each pool worker waits for the lock,
         # appending each follower it retrieves to the list
-        def pool_worker(pool: [], worker_idx: int):
+        def pool_worker(pool: [], worker_idx):
             pool_loader = instaloader.Instaloader()
             filename = self.fraud_target_username + '_build_file_' + str(worker_idx)
-            csv_writer = []
             build_file = []
-
+            
             # Try to open build file
             if os.path.exists(filename):
                 build_file = open(filename, 'r', newline='')
@@ -117,21 +116,22 @@ class FraudChecker():
                     return
                 loader = instaloader.Instaloader() # logout
             ret_user = [user, profile.followers, profile.followees]
+            return ret_user
 
         print("Pulling follower metadata...")
+        followers = self.followers
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as exe:
             # Isolate & multithread this
-            followers = self.followers
             size = len(followers)
             q1 = followers[:(size//4)]                     #  0% - 25%
             q2 = followers[size//4:(size//2)]           # 26% - 50%
             q3 = followers[size//2:(size - size//4)]    # 51% - 75%
-            q4 = followers[size - size//4:size]      # 76% - 100%
+            q4 = followers[size - size//4:size]      # 76% - 100%            
             exe.submit(pool_worker(q1, 1))
             exe.submit(pool_worker(q2, 2))
             exe.submit(pool_worker(q3, 3))
             exe.submit(pool_worker(q4, 4))
-            #exe.submit(pool_worker(followers))
+            #exe.submit(pool_worker(followers, 1))
 
     # Populate 'build_file' with the metadata from each follower in
     # the fraud target's follower list.
