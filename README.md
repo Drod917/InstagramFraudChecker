@@ -9,6 +9,16 @@ git clone https://github.com/Drod917/InstagramFraudChecker
 ```
 
 ### 1) To use:
+```
+from fraudchecker import FraudChecker
+```
+
+for the multithreaded version,
+
+```
+from fraudchecker_multi import FraudChecker
+```
+
 
 ```
 from fraudchecker import FraudChecker

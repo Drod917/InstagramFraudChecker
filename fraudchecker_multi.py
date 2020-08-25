@@ -108,7 +108,7 @@ class FraudChecker():
         dist = Distribution(self.df_filename)
         dist.get_distribution()
 
-
+# REQUIRED FOR MULTIPROCESSING ON WINDOWS
 if __name__ == '__main__':
     print("Main thread")
     bot = FraudChecker('_danielchristopher','wgHnvRQi11951!!%')
