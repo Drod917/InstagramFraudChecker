@@ -9,11 +9,13 @@ git clone https://github.com/Drod917/InstagramFraudChecker
 ```
 
 ### 1) To use:
+for the single-threaded version,
+
 ```
 from fraudchecker import FraudChecker
 ```
 
-for the multithreaded version,
+for the multi-threaded version (much faster, probably much more subject to rate limiting),
 
 ```
 from fraudchecker_multi import FraudChecker
@@ -21,8 +23,6 @@ from fraudchecker_multi import FraudChecker
 
 
 ```
-from fraudchecker import FraudChecker
-
 bot = FraudChecker('username', 'password')
 
 bot.target('potential_fraud')
