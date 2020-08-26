@@ -33,6 +33,7 @@ from fraudchecker_multi import FraudChecker
 # REQUIRED TO ENABLE MULTITHREADING ON WINDOWS DEVICES
 if __name__ == '__main__':
 
+    # You'll need to login in order to pull the target's follower list
     bot = FraudChecker('username', 'password')
 
     bot.target('potential_fraud')
