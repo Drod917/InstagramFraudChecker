@@ -66,11 +66,8 @@ class FraudChecker():
         self.__get_metrics()
 
     def __get_metrics(self) -> pd.DataFrame:
-        # TODO: Each pool worker waits for the lock,
-        # appending each follower it retrieves to the list
         print("Pulling follower metadata...")
         followers = self.followers
-
         pool = multiprocessing.Pool(processes=4)
         size = len(followers)
         q1 = followers[:(size//4)]                     #  0% - 25%
@@ -80,9 +77,6 @@ class FraudChecker():
         payload = [self.fraud_target.username, self.username, self.password]
         results = pool.starmap(poolworker.worker, [(q1,1,payload),(q2,2,payload),(q3,3,payload),(q4,4,payload)])
 
-    # Populate 'build_file' with the metadata from each follower in
-    # the fraud target's follower list.
-    # WARNING: DO NOT USE UNLESS THE BUILD FILE IS COMPLETE
     def build_dataframe(self):
         build_file_1 = self.fraud_target.username + '_build_file_1'
         build_file_2 = self.fraud_target.username + '_build_file_2'
@@ -108,13 +102,13 @@ class FraudChecker():
         # Maybe: Compare the length of the build file with the length
         # of the follower list before removing the build file.
         # Then, I can remove the follower file as well.
-        #os.remove(build_filename)
         return df 
 
     def show_distribution(self):
         dist = Distribution(self.df_filename)
         dist.get_distribution()
 
-# REQUIRED FOR MULTIPROCESSING ON WINDOWS
+# REQUIRED ON WINDOWS DEVICES OR THE PROGRAM WILL LOOP
 if __name__ == '__main__':
     print("Do not run this file directly.")
+    sys.exit()

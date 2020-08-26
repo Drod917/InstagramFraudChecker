@@ -44,7 +44,7 @@ def worker(pool: [], worker_idx: int, payload: []):
         build_file = open(filename, 'w', newline='')
     csv_writer = csv.writer(build_file)
 
-    # # Continue loading from checkpoint
+    # Continue loading from checkpoint
     try:
         for user in pool:
             new_user = grab_follower_metadata(pool_loader, user)
