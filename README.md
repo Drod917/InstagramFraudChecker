@@ -30,7 +30,7 @@ from fraudchecker_multi import FraudChecker
 
 
 ```
-# REQUIRED TO ENABLE MULTITHREADING ON WINDOWS DEVICES
+# REQUIRED ON WINDOWS DEVICES OR THE PROGRAM WILL LOOP
 if __name__ == '__main__':
 
     # You'll need to login in order to pull the target's follower list

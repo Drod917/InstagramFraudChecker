@@ -108,7 +108,6 @@ class FraudChecker():
         dist = Distribution(self.df_filename)
         dist.get_distribution()
 
-# REQUIRED ON WINDOWS DEVICES OR THE PROGRAM WILL LOOP
 if __name__ == '__main__':
     print("Do not run this file directly.")
     sys.exit()
