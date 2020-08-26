@@ -30,13 +30,16 @@ from fraudchecker_multi import FraudChecker
 
 
 ```
-bot = FraudChecker('username', 'password')
+# REQUIRED TO ENABLE MULTITHREADING ON WINDOWS DEVICES
+if __name__ == '__main__':
 
-bot.target('potential_fraud')
+    bot = FraudChecker('username', 'password')
 
-bot.check_for_fraud()
+    bot.target('potential_fraud')
 
-bot.build_distribution()
+    bot.check_for_fraud()
 
-bot.show_distribution()
+    bot.build_distribution()
+
+    bot.show_distribution()
 ```

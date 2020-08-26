@@ -4,6 +4,8 @@ import tqdm
 from instaloader.exceptions import ProfileNotExistsException, ConnectionException
 from instaloader import instaloader, Profile 
 
+# TODO: Accept a network location to route the poolworker through
+# def worker(pool: [], worker_idx: int, payload: [fraud_target, username, password, network_loc])
 def worker(pool: [], worker_idx: int, payload: []):
     pool_loader = instaloader.Instaloader()
     fraud_target_username = payload[0]

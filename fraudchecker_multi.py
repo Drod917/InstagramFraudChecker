@@ -13,25 +13,33 @@ from tqdm import tqdm
 
 class FraudChecker():
 
-    def __init__(self, username='', password=''):
+    def __init__(self, username: str, password: str):
         self.loader = instaloader.Instaloader() 
         self.username = username 
         self.password = password
-        self.fraud_target_data = []
 
     def target(self, fraud_target: str):
         self.loader = loader = instaloader.Instaloader() # reload to avoid Profile.from_username bug
+
         try:
             self.fraud_target = Profile.from_username(loader.context, fraud_target)
             print('Target found: ', fraud_target)
         except:
-            print('Failed to acquire profile %s', fraud_target)
-            pass
-    
+            print('Failed to acquire profile %s, logging in to retry...', fraud_target)
+            try:
+                loader.login(self.username, self.password)
+                self.fraud_target = Profile.from_username(loader.context, fraud_target)
+                print('Target found: ', fraud_target)
+                self.loader = instaloader.Instaloader() # log out
+            except:
+                print('Failed to acquire profile %s', fraud_target)
+                return
+
     def check_for_fraud(self):
-        filename = self.fraud_target.username + '_followers.txt'
+        filename = self.fraud_target.username + '_followers.csv'
         print("Loading " + self.fraud_target.username + '\'s followers...')
         followers = []
+
         # Look for first checkpoint
         if os.path.exists(filename):
             print("First checkpoint found, resuming...")
@@ -48,12 +56,9 @@ class FraudChecker():
                     followers.append(follower.username)
                 # Create first checkpoint
                 df = pd.DataFrame(data=followers)
-                df.to_csv(filename, index=False)
+                df.to_csv(filename, index=False, header=False)
                 print("Wrote " + str(len(followers)) + " followers to file.")
             except:
-                df = pd.DataFrame(data=followers)
-                df.to_csv(filename, index=False)
-                save('resume_information.json', post_iterator.freeze())
                 quit()
         self.followers = followers
         self.loader = instaloader.Instaloader() # 'logout'
@@ -65,6 +70,7 @@ class FraudChecker():
         # appending each follower it retrieves to the list
         print("Pulling follower metadata...")
         followers = self.followers
+
         pool = multiprocessing.Pool(processes=4)
         size = len(followers)
         q1 = followers[:(size//4)]                     #  0% - 25%
@@ -82,6 +88,7 @@ class FraudChecker():
         build_file_2 = self.fraud_target.username + '_build_file_2'
         build_file_3 = self.fraud_target.username + '_build_file_3'
         build_file_4 = self.fraud_target.username + '_build_file_4'
+
         # Read the build_file into a dataframe with column labels
         try:
             df_1 = pd.read_csv(build_file_1, header=None, names=['username','followers','following'])
@@ -110,9 +117,4 @@ class FraudChecker():
 
 # REQUIRED FOR MULTIPROCESSING ON WINDOWS
 if __name__ == '__main__':
-    print("Main thread")
-    bot = FraudChecker('_danielchristopher','wgHnvRQi11951!!%')
-    bot.target('arodriguez4ny')
-    bot.check_for_fraud()
-    bot.build_dataframe()
-    bot.show_distribution()
+    print("Do not run this file directly.")
