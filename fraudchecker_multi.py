@@ -3,7 +3,6 @@ from distribution import Distribution
 from instaloader.exceptions import ProfileNotExistsException, ConnectionException
 import poolworker
 import multiprocessing
-import numpy as np 
 import concurrent.futures
 import pandas as pd
 import csv 
@@ -40,6 +39,9 @@ class FraudChecker():
         if not hasattr(self, 'fraud_target') or not hasattr(self.fraud_target, 'username'):
             print(f'Please lock-on to a target first.')
             return 
+        if os.path.exists(f'{self.fraud_target.username}_dataframe.csv'):
+            self.show_distribution()
+            return
 
         filename = f'{self.fraud_target.username}_followers.csv'
         print(f'Loading {self.fraud_target.username}\'s followers...')
@@ -107,7 +109,7 @@ class FraudChecker():
         except FileNotFoundError as e:
             print('No build file found. Could not build dataframe.')
             return
-        df_filename = self.fraud_target.username + '_dataframe.csv'
+        df_filename = f'{self.fraud_target.username}_dataframe.csv'
         df.to_csv(df_filename, index=False)
         self.df_filename = df_filename
         self.loader = instaloader.Instaloader()
@@ -120,7 +122,8 @@ class FraudChecker():
 
     def show_distribution(self):
         try:
-            dist = Distribution(self.df_filename)
+            filename = f'{self.fraud_target.username}_dataframe.csv'
+            dist = Distribution(filename)
             dist.get_distribution()
         except AttributeError:
             print('No dataframe .csv found. Could not retrieve distribution.')
