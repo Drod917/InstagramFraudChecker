@@ -9,6 +9,7 @@ import csv
 import os.path
 import sys
 import time
+import json
 from tqdm import tqdm
 
 class FraudChecker():
@@ -82,9 +83,31 @@ class FraudChecker():
         q2 = followers[size//4:(size//2)]           # 26% - 50%
         q3 = followers[size//2:(size - size//4)]    # 51% - 75%
         q4 = followers[size - size//4:size]      # 76% - 100%  
-        payload = [self.fraud_target.username, self.username, self.password]
+
+        # Obtain proper headers
+        f = open('headers.json','r')
+        headers = json.load(f)
+        f.close()
+
+        # Get HTTP Proxies
+        try:
+            f = open('proxies.txt','r')
+            proxies = f.read().splitlines()
+            f.close()
+        except:
+            print(f'No proxies file found.')
+            return 
+
+        requests_cfg = [headers, proxies]
+        payload = [self.fraud_target.username, self.username, self.password, requests_cfg]
+
         start = time.clock()
-        result = pool.starmap(poolworker.worker, [(q1,1,payload),(q2,2,payload),(q3,3,payload),(q4,4,payload)])
+        try:
+            result = pool.starmap(poolworker.worker, [(q1,0,payload),(q2,1,payload),(q3,2,payload),(q4,3,payload)])
+        except KeyError:
+            print('Missing proxies from list. Need [4]')
+            sys.exit()
+
         end = time.clock()
         print(f'Finished in {end-start}s')
 
@@ -94,10 +117,10 @@ class FraudChecker():
             return 
 
         target = self.fraud_target.username 
-        build_file_1 = f'{target}_build_file_1'
-        build_file_2 = f'{target}_build_file_2'
-        build_file_3 = f'{target}_build_file_3'
-        build_file_4 = f'{target}_build_file_4'
+        build_file_1 = f'{target}_build_file_0'
+        build_file_2 = f'{target}_build_file_1'
+        build_file_3 = f'{target}_build_file_2'
+        build_file_4 = f'{target}_build_file_3'
 
         # Read the build_file into a dataframe with column labels
         try:

@@ -1,18 +1,23 @@
 import csv 
 import os
+import requests
+import json
 from tqdm import tqdm
 from instaloader.exceptions import ProfileNotExistsException, ConnectionException
 from instaloader import instaloader, Profile 
+from requests.exceptions import InvalidProxyURL, ConnectTimeout, ProxyError
 
 # TODO: Accept a network location to route the poolworker through
-# def worker(pool: [], worker_idx: int, payload: [fraud_target, username, password, network_loc])
+# def worker(pool: [], worker_idx: int, payload: [fraud_target, username, password, [headers, [requests_cfg]]])
 def worker(pool: [], worker_idx: int, payload: []):
     pool_loader = instaloader.Instaloader()
     fraud_target_username = payload[0]
     username = payload[1]
     password = payload[2]
+    headers = payload[3][0]
     filename = f'{fraud_target_username}_build_file_{str(worker_idx)}'
     build_file = []
+    res = []
 
     def grab_follower_metadata(loader, user: str) -> []:
         try:
@@ -29,7 +34,45 @@ def worker(pool: [], worker_idx: int, payload: []):
             loader = instaloader.Instaloader() # logout
         ret_user = [user, profile.followers, profile.followees]
         return ret_user
+
+    # Test proxy connections
+    # Fall back to local connection should any problems occur
+    try:
+        http_proxy = payload[3][1][worker_idx]
+        os.environ['http_proxy'] = f'http://{http_proxy}'
+        os.environ['https_proxy'] = f'https://{http_proxy}'
+    except:
+        print(f'Proxy not found for worker {worker_idx}. Defaulting to local IP')
+        del os.environ['http_proxy']
+        del os.environ['https_proxy']
+        http_proxy = 'localhost'
+    try:
+        res = requests.get('http://instagram.com', headers=headers, timeout=15)
+        if res.status_code != 200:
+            print(f'Pool worker {worker_idx} encountered an error accessing instagram through {http_proxy}. Defaulting to local IP')
+            del os.environ['http_proxy']
+            del os.environ['https_proxy']
+            http_proxy = 'localhost'
+    except InvalidProxyURL:
+        print(f'Please check proxy URL {worker_idx}, it is possibly malformed. Defaulting to local IP')
+        del os.environ['http_proxy']
+        del os.environ['https_proxy']
+        http_proxy = 'localhost'
+    except ConnectTimeout or ProxyError:
+        print(f'Worker {worker_idx} could not connect to proxy. Defaulting to local IP')
+        del os.environ['http_proxy']
+        del os.environ['https_proxy']
+        http_proxy = 'localhost'
+    except Exception as e:
+        print(f'Worker {worker_idx}: QUE?? Defaulting to local IP')
+        print(e)
+        del os.environ['http_proxy']
+        del os.environ['https_proxy']
+        http_proxy = 'localhost'
+
+    print(f'Worker {worker_idx} passed proxy test via {http_proxy}!')
     
+
     # Try to open build file
     if os.path.exists(filename):
         build_file = open(filename, 'r', newline='')
@@ -62,3 +105,6 @@ def worker(pool: [], worker_idx: int, payload: []):
     build_file.close()
     print(f'Build file written to {filename}')
     return True
+
+if __name__ == '__main__':
+    quit()
