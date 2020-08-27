@@ -1,6 +1,6 @@
 import csv 
 import os
-import tqdm
+from tqdm import tqdm
 from instaloader.exceptions import ProfileNotExistsException, ConnectionException
 from instaloader import instaloader, Profile 
 
@@ -11,19 +11,19 @@ def worker(pool: [], worker_idx: int, payload: []):
     fraud_target_username = payload[0]
     username = payload[1]
     password = payload[2]
-    filename = fraud_target_username + '_build_file_' + str(worker_idx)
+    filename = f'{fraud_target_username}_build_file_{str(worker_idx)}'
     build_file = []
 
     def grab_follower_metadata(loader, user: str) -> []:
         try:
             profile = Profile.from_username(loader.context, user)
         except ProfileNotExistsException:
-            print("Follower " + user + " not found! Logging in to retry...")
+            print(f'Follower {user} not found! Logging in to retry...')
             loader.login(username, password)
             try:
                 profile = Profile.from_username(loader.context, user)
             except:
-                print("Follower " + user + " not found ! Skipping...")
+                print(f'Follower {user} not found ! Skipping...')
                 loader = instaloader.Instaloader()
                 return
             loader = instaloader.Instaloader() # logout
@@ -38,7 +38,7 @@ def worker(pool: [], worker_idx: int, payload: []):
             last_loaded_follower += 1
         build_file.close()
         build_file = open(filename, 'a', newline='')
-        print("Continuing from line " + str(last_loaded_follower), flush=True)
+        print(f'Continuing from line {str(last_loaded_follower)}', flush=True)
         pool = pool[last_loaded_follower:]
     else:
         build_file = open(filename, 'w', newline='')
@@ -46,19 +46,19 @@ def worker(pool: [], worker_idx: int, payload: []):
 
     # Continue loading from checkpoint
     try:
-        for user in pool:
+        for user in tqdm(pool):
             new_user = grab_follower_metadata(pool_loader, user)
             csv_writer.writerow(new_user) # write to checkpoint
     except KeyboardInterrupt:
         print("\nKeyboard interrupt detected, exiting...")
         build_file.close()
-        print("Build file written to " + filename)
+        print(f'Build file written to {filename}')
         sys.exit()
     except ConnectionException:
         print("429 Too many requests: redirected at login")
         build_file.close()
-        print("Build file written to " + filename)
+        print(f'Build file written to {filename}')
         return
     build_file.close()
-    print("Build file written to " + filename)
+    print(f'Build file written to {filename}')
     return True
