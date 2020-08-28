@@ -47,7 +47,7 @@ def worker(pool: [], worker_idx: int, payload: []):
         del os.environ['https_proxy']
         http_proxy = 'localhost'
     try:
-        res = requests.get('http://instagram.com', headers=headers, timeout=15)
+        res = requests.get('http://instagram.com', headers=headers, timeout=5)
         if res.status_code != 200:
             print(f'Pool worker {worker_idx} encountered an error accessing instagram through {http_proxy}. Defaulting to local IP')
             del os.environ['http_proxy']

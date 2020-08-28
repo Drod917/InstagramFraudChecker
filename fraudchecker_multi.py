@@ -107,6 +107,9 @@ class FraudChecker():
         except KeyError:
             print('Missing proxies from list. Need [4]')
             sys.exit()
+        except Exception as e:
+            print(e)
+            sys.exit()
 
         end = time.clock()
         print(f'Finished in {end-start}s')
