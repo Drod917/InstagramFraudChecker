@@ -21,11 +21,12 @@ class Distribution():
                 y_2.append(val)
 
             # Get the least significant digit of each value
-            least_significant_digit = lambda x : (x // np.power(10, int(np.log10(x)))) if (x != 0) else 9
+            lsd = lambda x:\
+                (x // np.power(10, int(np.log10(x)))) if (x != 0) else 9
             for y in range(y_1.__len__()):
-                y_1[y] = least_significant_digit(y_1[y])
+                y_1[y] = lsd(y_1[y])
             for y in range(y_2.__len__()):
-                y_2[y] = least_significant_digit(y_2[y])
+                y_2[y] = lsd(y_2[y])
 
             # Create frequency distribution of LSD's from each follow set
             distribution_1 = np.zeros(10)
