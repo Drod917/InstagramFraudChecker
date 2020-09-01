@@ -3,14 +3,12 @@ from distribution import Distribution
 from instaloader.exceptions import ProfileNotExistsException, ConnectionException
 import poolworker
 import multiprocessing
-import concurrent.futures
 import pandas as pd
 import csv 
 import os.path
 import sys
 import time
 import json
-from tqdm import tqdm
 
 class FraudChecker():
     def __init__(self, username: str, password: str):

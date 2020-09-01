@@ -2,13 +2,15 @@ import csv
 import os
 import requests
 import json
+import sys
 from tqdm import tqdm
 from instaloader.exceptions import ProfileNotExistsException, ConnectionException
 from instaloader import instaloader, Profile 
 from requests.exceptions import InvalidProxyURL, ConnectTimeout, ProxyError
 
 # TODO: Accept a network location to route the poolworker through
-# def worker(pool: [], worker_idx: int, payload: [fraud_target, username, password, [headers, [requests_cfg]]])
+# payload: [fraud_target, username, password, [requests_cfg]]
+# requests_cfg : [headers, proxy_list]
 def worker(pool: [], worker_idx: int, payload: []):
     pool_loader = instaloader.Instaloader()
     fraud_target_username = payload[0]
@@ -42,24 +44,28 @@ def worker(pool: [], worker_idx: int, payload: []):
         os.environ['http_proxy'] = f'http://{http_proxy}'
         os.environ['https_proxy'] = f'https://{http_proxy}'
     except:
-        print(f'Proxy not found for worker {worker_idx}. Defaulting to local IP')
+        print(f'Proxy not found for worker {worker_idx}.',
+              f'Defaulting to local IP')
         del os.environ['http_proxy']
         del os.environ['https_proxy']
         http_proxy = 'localhost'
     try:
         res = requests.get('http://instagram.com', headers=headers, timeout=5)
         if res.status_code != 200:
-            print(f'Pool worker {worker_idx} encountered an error accessing instagram through {http_proxy}. Defaulting to local IP')
+            print(f'Pool worker {worker_idx} encountered an error accessing',
+                  f'instagram through {http_proxy}. Defaulting to local IP')
             del os.environ['http_proxy']
             del os.environ['https_proxy']
             http_proxy = 'localhost'
     except InvalidProxyURL:
-        print(f'Please check proxy URL {worker_idx}, it is possibly malformed. Defaulting to local IP')
+        print(f'Please check proxy URL {worker_idx}, it is possibly',
+              f'malformed. Defaulting to local IP')
         del os.environ['http_proxy']
         del os.environ['https_proxy']
         http_proxy = 'localhost'
     except ConnectTimeout or ProxyError:
-        print(f'Worker {worker_idx} could not connect to proxy. Defaulting to local IP')
+        print(f'Worker {worker_idx} could not connect to proxy.',
+              f'Defaulting to local IP')
         del os.environ['http_proxy']
         del os.environ['https_proxy']
         http_proxy = 'localhost'
