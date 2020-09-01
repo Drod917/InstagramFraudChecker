@@ -5,8 +5,6 @@ import matplotlib.pyplot as plt
 # Takes .csv with rows in the form of
 # [username, followers, following]
 class Distribution():
-    x = np.arange(1,10,1) 
-
     def __init__(self, filename: str):
         self.filename = filename
         self.title = filename[:filename.find('_dataframe.csv')]
@@ -39,17 +37,19 @@ class Distribution():
             following_dist = distribution_2[:9]
 
             # Benford graph
+            x_range = np.arange(1,10,1) 
+            title = self.title
             benford = lambda x : np.log(x + 1) - np.log(x)
-            benford_y = list(map(benford, self.x))
+            benford_y = list(map(benford, x_range))
             fig, ax = plt.subplots(2)
-            ax[0].plot(self.x, benford_y, label='benford\'s curve')
+            fig.suptitle(f'{title}\'s fraud analysis')
+            ax[0].plot(x_range, benford_y, label='benford\'s curve')
             ax[0].legend()
 
             if followers: # Follower graph
-                ax[1].plot(self.x, follower_dist, label='followers')
+                ax[1].plot(x_range, follower_dist, label=f'{title}\'s followers')
             if following: # Following graph
-                ax[1].plot(self.x, following_dist, label='following')
+                ax[1].plot(x_range, following_dist, label=f'{title}\'s following')
             ax[1].legend()
-            plt.title(self.title + '\'s curve')
             plt.tight_layout()
             plt.show()

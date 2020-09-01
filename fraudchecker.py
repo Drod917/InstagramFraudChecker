@@ -1,41 +1,59 @@
 from instaloader import instaloader, Profile
 from distribution import Distribution
 from instaloader.exceptions import ProfileNotExistsException, ConnectionException
-import threading
-import numpy as np 
+import poolworker
+import multiprocessing
 import concurrent.futures
 import pandas as pd
 import csv 
 import os.path
 import sys
+import time
+import json
 from tqdm import tqdm
 
 class FraudChecker():
-
-    def __init__(self, username='', password=''):
+    def __init__(self, username: str, password: str):
         self.loader = instaloader.Instaloader() 
         self.username = username 
         self.password = password
-        self.lock = threading.Lock()
-        self.fraud_target_data = []
 
-    def target(self, fraud_user: str):
-        self.loader = loader = instaloader.Instaloader() # reload to avoid Profile.from_username bug
-        self.fraud_target_username = fraud_user
+    def target(self, fraud_target: str):
+        # reload to avoid Profile.from_username bug
+        self.loader = loader = instaloader.Instaloader() 
         try:
-            self.fraud_target = Profile.from_username(loader.context, fraud_user)
-            print('Target found: ', fraud_user)
+            self.fraud_target = Profile.from_username(loader.context,
+                                                      fraud_target)
+            print(f'Target found: {fraud_target}')
         except:
-            print('Failed to acquire profile %s', fraud_user)
-            pass
-    
+            print(f'Failed to acquire lock on profile {fraud_target},',
+                    f'logging in to retry...')
+            try:
+                loader.login(self.username, self.password)
+                self.fraud_target = Profile.from_username(loader.context,
+                                                          fraud_target)
+                print(f'Target found: {fraud_target}')
+                self.loader = instaloader.Instaloader() # log out
+            except:
+                print(f'Failed to acquire lock on profile {fraud_target}')
+                return
+
     def check_for_fraud(self):
-        filename = self.fraud_target.username + '_followers.txt'
-        print("Loading followers...")
+        if not hasattr(self, 'fraud_target') or \
+           not hasattr(self.fraud_target, 'username'):
+            print(f'Please lock-on to a target first.')
+            return 
+        target = self.fraud_target.username
+        if os.path.exists(f'{target}_dataframe.csv'):
+            self.show_distribution()
+            return
+        filename = f'{target}_followers.csv'
+        print(f'Loading {target}\'s followers...')
         followers = []
+
         # Look for first checkpoint
         if os.path.exists(filename):
-            print("First checkpoint found, resuming...")
+            print('First checkpoint found, resuming...')
             f = open(filename, 'r')
             followers = f.read().splitlines()
             f.close()
@@ -45,126 +63,118 @@ class FraudChecker():
             post_iterator = self.fraud_target.get_followers()
             try:
                 for follower in post_iterator:
-                    print(". ", end="", flush=True)
+                    print(' .', end='', flush=True)
                     followers.append(follower.username)
                 # Create first checkpoint
                 df = pd.DataFrame(data=followers)
-                df.to_csv(filename, index=False)
-                print("Wrote " + str(len(followers)) + " followers to file.")
+                df.to_csv(filename, index=False, header=False)
+                print(f'Wrote {str(len(followers))} followers to file.')
             except:
-                df = pd.DataFrame(data=followers)
-                df.to_csv(filename, index=False)
-                save('resume_information.json', post_iterator.freeze())
+                print(f'Could not find followers for profile',
+                      f'{target}')
+                with open('post_iterator.json', 'w') as json_file:
+                    json.dump(followers, json_file)
+                    post_iterator.freeze()
                 quit()
-        self.fraud_target_followers = followers
+        self.followers = followers
         self.loader = instaloader.Instaloader() # 'logout'
-        print("Followers loaded.")
+        print('Followers loaded.')
         self.__get_metrics()
 
     def __get_metrics(self) -> pd.DataFrame:
-        csv_writer = []
-        resource_lock = threading.Lock()  
-        filename = self.fraud_target.username + '_build_file.csv'
-        build_file = ''
-        # build_file_p1
-        # build_file_p2
-        # build_file_p3
-        # build_file_p4
+        print('Pulling follower metadata...')
+        followers = self.followers
+        pool = multiprocessing.Pool(processes=4)
+        size = len(followers)
+        p1 = followers[:(size//4)]                     #  0% - 25%
+        p2 = followers[size//4:(size//2)]              # 26% - 50%
+        p3 = followers[size//2:(size - size//4)]       # 51% - 75%
+        p4 = followers[size - size//4:size]            # 76% - 100%  
 
-        # TODO: Each pool worker will generate its own build_file,
-        # all of which get combined into one csv at the end
-        def pool_worker(pool: []):
-            pool_loader = instaloader.Instaloader()
-            # Try to open build_file and continue loading from checkpoint
-            try:
-                for user in tqdm(pool):
-                    new_user = grab_follower_metadata(pool_loader, user)
-            except KeyboardInterrupt:
-                print("\nKeyboard interrupt detected, exiting...")
-                build_file.close()
-                print("Build file written to " + filename)
-                sys.exit()
-            except ConnectionException:
-                print("429 Too many requests: redirected at login")
-                build_file.close()
-                print("Build file written to " + filename)
-                return
-            build_file.close()
-            print("Build file written to " + filename)
+        # Obtain proper headers
+        f = open('headers.json','r')
+        headers = json.load(f)
+        f.close()
 
-        def grab_follower_metadata(loader, user: str) -> []:
-            try:
-                profile = Profile.from_username(loader.context, user)
-            except ProfileNotExistsException:
-                print("Follower " + user + " not found! Logging in to retry...")
-                loader.login(self.username, self.password)
-                try:
-                    profile = Profile.from_username(loader.context, user)
-                except:
-                    print("Follower " + user + " not found ! Skipping...")
-                    loader = instaloader.Instaloader()
-                    return
-                loader = instaloader.Instaloader() # logout
-            ret_user = [user, profile.followers, profile.followees]
-            resource_lock.acquire()
-            csv_writer.writerow(ret_user) # write to checkpoint
-            resource_lock.release()
+        # Get HTTP Proxies
+        try:
+            f = open('proxies.txt','r')
+            proxies = f.read().splitlines()
+            f.close()
+        except:
+            print(f'No proxies file found.')
+            return 
 
-        # Look for checkpoint
-        if os.path.exists(filename):
-            build_file = open(filename, 'r', newline='')
-            last_loaded_follower = 0
-            for line in build_file.readlines():
-                last_loaded_follower += 1
-            build_file.close()
-            build_file = open(filename, 'a', newline='')
-            print("Continuing from line " + str(last_loaded_follower), flush=True)
-            followers = self.fraud_target_followers[last_loaded_follower:]
-        else:
-            build_file = open(filename, 'w', newline='')
-            followers = self.fraud_target_followers
-        self.filename = filename
-        csv_writer = csv.writer(build_file)
-        print("Pulling follower metadata...")
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as exe:
-            # Isolate & multithread this
-            size = len(followers)
-            # q1 = followers[:(size//4)]                     #  0% - 25%
-            # q2 = followers[size//4:(size//2)]           # 26% - 50%
-            # q3 = followers[size//2:(size - size//4)]    # 51% - 75%
-            # q4 = followers[size - size//4:size]      # 76% - 100%
-            # exe.submit(pool_worker(q1))
-            # exe.submit(pool_worker(q2))
-            # exe.submit(pool_worker(q3))
-            # exe.submit(pool_worker(q4))
-            exe.submit(pool_worker(followers))
+        requests_cfg = [headers, proxies]
+        payload = [self.fraud_target.username,
+                   self.username,
+                   self.password,
+                   requests_cfg]
 
-    # Populate 'build_file' with the metadata from each follower in
-    # the fraud target's follower list.
-    # WARNING: DO NOT USE UNLESS THE BUILD FILE IS COMPLETE
+        start = time.perf_counter()
+        try:
+            result = pool.starmap(poolworker.worker,
+                                  [(p1,0,payload),
+                                   (p2,1,payload),
+                                   (p3,2,payload),
+                                   (p4,3,payload)])
+        except KeyError:
+            print('Missing proxies from list. Need [4]')
+            sys.exit()
+        except Exception as e:
+            print(e)
+            sys.exit()
+        end = time.perf_counter()
+        print(f'Finished grabbing follower metadata in',
+              f'{round(end-start, 2)}s')
+
     def build_dataframe(self):
-        build_filename = self.fraud_target_username + '_build_file.csv'
+        if not hasattr(self, 'fraud_target') or \
+           not hasattr(self.fraud_target, 'username'):
+            print(f'Please lock-on to a target first.')
+            return 
+
+        target = self.fraud_target.username 
+        build_file_1 = f'{target}_build_file_0'
+        build_file_2 = f'{target}_build_file_1'
+        build_file_3 = f'{target}_build_file_2'
+        build_file_4 = f'{target}_build_file_3'
+
         # Read the build_file into a dataframe with column labels
         try:
-            df = pd.read_csv(build_filename, header=None, names=['username','followers','following'])
-        except FileNotFoundError as e:
-            print("No build file found. DataFrame build failed")
+            df_1 = pd.read_csv(build_file_1, header=None,
+                               names=['username','followers','following'])
+            df_2 = pd.read_csv(build_file_2, header=None,
+                               names=['username','followers','following'])
+            df_3 = pd.read_csv(build_file_3, header=None,
+                               names=['username','followers','following'])
+            df_4 = pd.read_csv(build_file_4, header=None,
+                               names=['username','followers','following'])
+            df = df_1.append(df_2.append(df_3.append(df_4)))
+        except FileNotFoundError:
+            print('No build file found. Could not build dataframe.')
             return
-        self.fraud_target_data = df
-        df_filename = self.fraud_target_username + '_dataframe.csv'
+        df_filename = f'{self.fraud_target.username}_dataframe.csv'
         df.to_csv(df_filename, index=False)
-        self.filename = df_filename
+        self.df_filename = df_filename
         self.loader = instaloader.Instaloader()
-        print("Dataframe written to " + df_filename)
+        print(f'Dataframe written to {df_filename}')
         # TODO: Add safety before removing.
         # Maybe: Compare the length of the build file with the length
         # of the follower list before removing the build file.
         # Then, I can remove the follower file as well.
-        os.remove(build_filename)
         return df 
 
     def show_distribution(self):
-        dist = Distribution(self.filename, self.fraud_target_username)
-        dist.get_distribution()
+        try:
+            filename = f'{self.fraud_target.username}_dataframe.csv'
+            dist = Distribution(filename)
+            dist.get_distribution()
+        except AttributeError:
+            print('No dataframe .csv found. Could not retrieve distribution.')
+        except:
+            print('An error occurred while building the distribution.')
 
-
+if __name__ == '__main__':
+    print("Do not run this file directly.")
+    sys.exit()
