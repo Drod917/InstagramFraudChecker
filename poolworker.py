@@ -8,9 +8,11 @@ from instaloader.exceptions import ProfileNotExistsException, ConnectionExceptio
 from instaloader import instaloader, Profile 
 from requests.exceptions import InvalidProxyURL, ConnectTimeout, ProxyError
 
-# TODO: Accept a network location to route the poolworker through
-# payload: [fraud_target, username, password, [requests_cfg]]
-# requests_cfg : [headers, proxy_list]
+'''
+Accepts a network location to route the poolworker through.
+    payload: [fraud_target, username, password, [requests_cfg]]
+    requests_cfg : [headers, proxy_list]
+'''
 def worker(pool: [], worker_idx: int, payload: []):
     pool_loader = instaloader.Instaloader()
     fraud_target_username = payload[0]
@@ -63,7 +65,7 @@ def worker(pool: [], worker_idx: int, payload: []):
         del os.environ['http_proxy']
         del os.environ['https_proxy']
         http_proxy = 'localhost'
-    except ConnectTimeout or ProxyError:
+    except (ConnectTimeout, ProxyError):
         print(f'Worker {worker_idx} could not connect to proxy.',
               f'Defaulting to local IP')
         del os.environ['http_proxy']
@@ -83,7 +85,7 @@ def worker(pool: [], worker_idx: int, payload: []):
     if os.path.exists(filename):
         build_file = open(filename, 'r', newline='')
         last_loaded_follower = 0
-        for line in build_file.readlines():
+        for _ in build_file.readlines():
             last_loaded_follower += 1
         build_file.close()
         build_file = open(filename, 'a', newline='')
