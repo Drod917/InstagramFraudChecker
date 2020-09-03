@@ -116,6 +116,7 @@ class FraudChecker():
                                    (p2,1,payload),
                                    (p3,2,payload),
                                    (p4,3,payload)])
+            print(result)
         except KeyError:
             print('Missing proxies from list. Need [4]')
             sys.exit()
@@ -157,10 +158,6 @@ class FraudChecker():
         self.df_filename = df_filename
         self.loader = instaloader.Instaloader()
         print(f'Dataframe written to {df_filename}')
-        # TODO: Add safety before removing.
-        # Maybe: Compare the length of the build file with the length
-        # of the follower list before removing the build file.
-        # Then, I can remove the follower file as well.
         return df 
 
     def show_distribution(self):
