@@ -45,7 +45,6 @@ class Distribution():
             fig.suptitle(f'{title}\'s fraud analysis')
             ax[0].plot(x_range, benford_y, label='benford\'s curve')
             ax[0].legend()
-
             if followers: # Follower graph
                 ax[1].plot(x_range, follower_dist, label=f'{title}\'s followers')
             if following: # Following graph
