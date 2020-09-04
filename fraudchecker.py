@@ -46,12 +46,12 @@ class FraudChecker():
             self.show_distribution()
             return
         filename = f'{target}_followers.csv'
-        print(f'Loading {target}\'s followers...')
         followers = []
 
         # Look for first checkpoint
         if os.path.exists(filename):
-            print('First checkpoint found, resuming...')
+            print('First checkpoint found!')
+            print(f'Loading {target}\'s followers...')
             f = open(filename, 'r')
             followers = f.read().splitlines()
             f.close()
@@ -70,9 +70,7 @@ class FraudChecker():
             except:
                 print(f'Could not find followers for profile',
                       f'{target}')
-                with open('post_iterator.json', 'w') as json_file:
-                    json.dump(followers, json_file)
-                    post_iterator.freeze()
+                # TODO: SAVE POST ITERATOR
                 quit()
         self.followers = followers
         self.loader = instaloader.Instaloader() # 'logout'
