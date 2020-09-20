@@ -16,18 +16,9 @@ git clone https://github.com/Drod917/InstagramFraudChecker
 * instaloader
 
 ### 1) To use:
-for the single-threaded version,
-
 ```
 from fraudchecker import FraudChecker
 ```
-
-for the multi-threaded version (much faster, probably much more subject to rate limiting),
-
-```
-from fraudchecker_multi import FraudChecker
-```
-
 
 ```
 # REQUIRED ON WINDOWS DEVICES OR THE PROGRAM WILL LOOP
@@ -40,7 +31,7 @@ if __name__ == '__main__':
 
     bot.check_for_fraud()
 
-    bot.build_distribution()
+    bot.build_dataframe()
 
     bot.show_distribution()
 ```
